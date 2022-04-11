@@ -25,7 +25,7 @@ class SlackPlugin extends MantisPlugin {
         $this->name = plugin_lang_get( 'title' );
         $this->description = plugin_lang_get( 'description' );
         $this->page = 'config_page';
-        $this->version = '1.0.1';
+        $this->version = '1.0.2';
         $this->requires = array(
             'MantisCore' => '2.0.0',
         );
@@ -130,11 +130,28 @@ class SlackPlugin extends MantisPlugin {
         $url = string_get_bug_view_url_with_fqdn($bug_id);
         $summary = $this->format_summary($bug);
         $reporter = $this->get_user_name(auth_get_current_user_id());
-        $msg = sprintf(plugin_lang_get($event === 'EVENT_REPORT_BUG' ? 'bug_created' : 'bug_updated'),
-            $project, $reporter, $url, $summary
-        );
+        $attachment = false;
+        $status = get_enum_element( 'status', $bug->status );
+        switch ($status) {
+            case 'resolved':
+                $msg = sprintf(plugin_lang_get('bug_resolved'),
+                    $project, $reporter, $url, $summary
+                );
+                break;
+            case 'closed':
+                $msg = sprintf(plugin_lang_get('bug_closed'),
+                    $project, $reporter, $url, $summary
+                );
+                break;
+            default:
+                $msg = sprintf(plugin_lang_get($event === 'EVENT_REPORT_BUG' ? 'bug_created' : 'bug_updated'),
+                    $project, $reporter, $url, $summary
+                );
+                $attachment = $this->get_attachment($bug);
+                break;
+        }
         //todo handle Close and Resolved differently and create proper username tags for Slack.
-        $this->notify($msg, $this->get_webhook($project), $this->get_channel($project), $this->get_attachment($bug));
+        $this->notify($msg, $this->get_webhook($project), $this->get_channel($project), $attachment);
     }
 
     function bug_report($event, $bug, $bug_id) {
@@ -194,7 +211,7 @@ class SlackPlugin extends MantisPlugin {
 
     function get_text_attachment($text) {
         $attachment = array('color' => '#3AA3E3', 'mrkdwn_in' => array('pretext', 'text', 'fields'));
-        $attachment['fallback'] = text . "\n";
+        $attachment['fallback'] = $text . "\n";
         $attachment['text'] = $text;
         return $attachment;
     }
@@ -415,6 +432,6 @@ class SlackPlugin extends MantisPlugin {
     	$username = $user['username'];
         $usernames = plugin_config_get('usernames');
         $username = array_key_exists($username, $usernames) ? $usernames[$username] : $username;
-		return '@' . $username;
+		return $username;
     }
 }
