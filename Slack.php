@@ -29,9 +29,9 @@ class SlackPlugin extends MantisPlugin {
         $this->requires = array(
             'MantisCore' => '2.0.0',
         );
-        $this->author = 'Karim Ratib';
-        $this->contact = 'karim.ratib@gmail.com';
-        $this->url = 'https://karimratib.me';
+        $this->author = 'Bas van Stein';
+        $this->contact = 'bas@emerald-it.nl';
+        $this->url = 'https://emerald-it.nl';
     }
 
     function install() {
@@ -133,6 +133,7 @@ class SlackPlugin extends MantisPlugin {
         $msg = sprintf(plugin_lang_get($event === 'EVENT_REPORT_BUG' ? 'bug_created' : 'bug_updated'),
             $project, $reporter, $url, $summary
         );
+        //todo handle Close and Resolved differently and create proper username tags for Slack.
         $this->notify($msg, $this->get_webhook($project), $this->get_channel($project), $this->get_attachment($bug));
     }
 
